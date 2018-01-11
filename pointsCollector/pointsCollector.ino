@@ -10,10 +10,15 @@
 #define STATE_HISTORY   4
 
 #define LONG_PRESS_MS 1000
-#define SLEEP_MS 50
+#define SLEEP_MS      50
+#define TIMEOUT_MS    5000
 
+#define DISPLAY_TIME_INF    0
 #define DISPLAY_TIME_SHORT  500
 #define DISPLAY_TIME_LONG   2000
+
+#define COLUMN_INDEX 2
+#define DEFAULT_DISPLAY_INDEX 3
 
 const uint8_t buttonsPins[4] = {0,1,2,3};
 bool buttonsPressed[4] = {false, false, false, false};
@@ -21,10 +26,13 @@ unsigned long buttonsPressedStart[4] = {0, 0, 0, 0};
 bool buttonsClicked[4] = {false, false, false, false};
 bool buttonsLongClicked[4] = {false, false, false, false};
 bool buttonPressed;
+unsigned long time_idle = millis();
 
 uint8_t singleScores[3];
 uint8_t state = STATE_IDLE;
 uint8_t brightness;
+
+
 Adafruit_7segment ledDisplay;
 
 
@@ -35,6 +43,8 @@ void update_buttons(){
     buttonPressed = digitalRead(buttonsPins[i]);
     // Button is pressed
     if(buttonPressed){
+      // Reset idle counter
+      time_idle = millis();
       // Button was just pressed
       if(!buttonsPressed[i]){
         buttonsPressedStart[i] = millis();
@@ -62,12 +72,20 @@ void clear_buttons(){
   }
 }
 
-void setRawDisplay(uint8_t index, uint8_t bits, uint8_t duration){
-  
+void displayRaw(uint8_t index, uint8_t bits, uint8_t duration, bool clear){
+  if(clear){
+    ledDisplay.clear();
+  }
+}
+
+void displayNumber(uint8_t index, uint8_t number, uint8_t duration, bool clear){
+  if(clear){
+    ledDisplay.clear();
+  }
 }
 
 void do_send(){
-  
+
 }
 
 void do_idle(){
@@ -79,29 +97,37 @@ void do_idle(){
     state = STATE_HISTORY;
   }else if(buttonsLongClicked[2]){
     state = STATE_SETTINGS;
+    displayNumber(DEFAULT_DISPLAY_INDEX, brightness, DISPLAY_TIME_INF, true);
   }
 }
 
 void do_settings(){
-  if(buttonsClicked[2]){
+  bool changed = false;
+  if(buttonsClicked[2] || time_idle > TIMEOUT_MS){
     state = STATE_IDLE;
+    ledDisplay.clear();
     return;
   }
-  if(buttonsClicked[1] && brightness < 14){
+  if(buttonsClicked[1] && brightness < 15){
     brightness++;
+    changed = true;
   }else if(buttonsClicked[3] && brightness > 0){
     brightness--;
+    changed = true;
   }
-  ledDisplay.setBrightness(brightness);
-  // TODO: save value
+  if(changed){
+    // TODO: save value
+    ledDisplay.setBrightness(brightness);
+    displayNumber(DEFAULT_DISPLAY_INDEX, brightness, DISPLAY_TIME_INF, true);
+  }
 }
 
 void do_record(){
-  
+
 }
 
 void do_history(){
-  
+
 }
 
 void setup(){
@@ -133,7 +159,7 @@ void loop() {
 
     case STATE_HISTORY:
     break;
-    
+
     default:
     break;
   }
