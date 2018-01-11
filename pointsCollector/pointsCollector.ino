@@ -1,6 +1,7 @@
 #include <Wire.h> // Enable this line if using Arduino Uno, Mega, etc.
 #include <Adafruit_GFX.h>
 #include "Adafruit_LEDBackpack.h"
+#include <LinkedList.h>
 
 
 #define STATE_SENDING   0
@@ -13,38 +14,56 @@
 #define SLEEP_MS      50
 #define TIMEOUT_MS    5000
 
-#define DISPLAY_TIME_INF    0
-#define DISPLAY_TIME_SHORT  500
-#define DISPLAY_TIME_LONG   2000
+#define DISPLAY_INF_MS    0
+#define DISPLAY_SHORT_MS  500
+#define DISPLAY_LONG_MS   2000
 
 #define COLUMN_INDEX 2
 #define DEFAULT_DISPLAY_INDEX 3
 
 const uint8_t buttonsPins[4] = {0,1,2,3};
-bool buttonsPressed[4] = {false, false, false, false};
-unsigned long buttonsPressedStart[4] = {0, 0, 0, 0};
-bool buttonsClicked[4] = {false, false, false, false};
-bool buttonsLongClicked[4] = {false, false, false, false};
-bool buttonPressed;
-unsigned long time_idle = millis();
 
-uint8_t singleScores[3];
+bool buttonsPressed[4];
+unsigned long buttonsPressedStart[4];
+bool buttonsClicked[4];
+bool buttonsLongClicked[4];
+bool buttonPressed;
+
+
+unsigned long timeIdle = millis();
+unsigned long displayEnd = 0;
+unsigned long now;
+
 uint8_t state = STATE_IDLE;
 uint8_t brightness;
 
 
 Adafruit_7segment ledDisplay;
 
+class Volley {
+	public:
+		unsigned long time;
+    uint8_t scores[3];
+};
 
+LinkedList<Volley*> volleyList = LinkedList<Volley*>();
 
+void updateDisplay(){
+  if(displayEnd != 0 && displayEnd < now){
+    ledDisplay.clear();
+  }
+}
 
+/**
+* Update buttons and check for clicked events
+**/
 void update_buttons(){
   for(uint8_t i=0; i<4; i++){
     buttonPressed = digitalRead(buttonsPins[i]);
     // Button is pressed
     if(buttonPressed){
       // Reset idle counter
-      time_idle = millis();
+      timeIdle = millis();
       // Button was just pressed
       if(!buttonsPressed[i]){
         buttonsPressedStart[i] = millis();
@@ -53,12 +72,13 @@ void update_buttons(){
     // Button is not pressed
     else{
       // Button was just released
-      if(buttonsPressed[i]){
+      if(buttonsPressed[i] && buttonsPressedStart > 0){
         if(millis() - buttonsPressedStart[i] < LONG_PRESS_MS){
           buttonsClicked[i] = true;
         }else{
           buttonsLongClicked[i] = true;
         }
+        buttonsPressedStart[i] = 0;
       }
     }
     buttonsPressed[i] = buttonsPressed;
@@ -84,10 +104,35 @@ void displayNumber(uint8_t index, uint8_t number, uint8_t duration, bool clear){
   }
 }
 
+/**
+* Displays a line of symbols to signal an error
+**/
+void displayNope(){
+  uint8_t temp[8] = ledDisplay->displaybuffer;
+
+  ledDisplay.writeDigitRaw(0, 1 << 6);
+  ledDisplay.writeDigitRaw(1, 1 << 6);
+  ledDisplay.writeDigitRaw(3, 1 << 6);
+  ledDisplay.writeDigitRaw(4, 1 << 6);
+  ledDisplay.writeDisplay();
+  delay(DISPLAY_SHORT_MS);
+  now = millis();
+  for(int i=0; i < 5; i++){
+    ledDisplay.writeDigitRaw(i, temp[i]);
+  }
+  if (displayEnd > 0){
+    displayEnd += DISPLAY_SHORT_MS;
+  }
+}
+
 void do_send(){
 
 }
 
+
+/**
+* Check for changes in state
+**/
 void do_idle(){
   if(buttonsClicked[0]){
     state = STATE_RECORDING;
@@ -97,13 +142,16 @@ void do_idle(){
     state = STATE_HISTORY;
   }else if(buttonsLongClicked[2]){
     state = STATE_SETTINGS;
-    displayNumber(DEFAULT_DISPLAY_INDEX, brightness, DISPLAY_TIME_INF, true);
+    displayNumber(DEFAULT_DISPLAY_INDEX, brightness, DISPLAY_INF_MS, true);
   }
 }
 
+/**
+* Settings to change the screen brightness
+**/
 void do_settings(){
   bool changed = false;
-  if(buttonsClicked[2] || time_idle > TIMEOUT_MS){
+  if(buttonsClicked[2] || timeIdle > TIMEOUT_MS){
     state = STATE_IDLE;
     ledDisplay.clear();
     return;
@@ -118,7 +166,7 @@ void do_settings(){
   if(changed){
     // TODO: save value
     ledDisplay.setBrightness(brightness);
-    displayNumber(DEFAULT_DISPLAY_INDEX, brightness, DISPLAY_TIME_INF, true);
+    displayNumber(DEFAULT_DISPLAY_INDEX, brightness, DISPLAY_INF_MS, true);
   }
 }
 
@@ -131,6 +179,10 @@ void do_history(){
 }
 
 void setup(){
+  buttonsPressed = {false, false, false, false};
+  buttonsPressedStart = {0, 0, 0, 0};
+  buttonsClicked = {false, false, false, false};
+  buttonsLongClicked = {false, false, false, false};
   for(uint8_t i=0; i<4; i++){
     pinMode(buttonsPins[i], INPUT);
   }
@@ -142,6 +194,7 @@ void setup(){
 }
 
 void loop() {
+  now = millis();
   update_buttons();
 
   switch(state){
@@ -166,35 +219,4 @@ void loop() {
 
   clear_buttons();
   ledDisplay.writeDisplay();
-}
-
-
-
-
-
-
-
-
-Adafruit_7segment matrix = Adafruit_7segment();
-
-void setup() {
-#ifndef __AVR_ATtiny85__
-  Serial.begin(9600);
-  Serial.println("7 Segment Backpack Test");
-#endif
-  matrix.begin(0x70);
-  brightness = 0;
-  matrix.writeDigitRaw(0, 0x7F);
-  matrix.writeDigitRaw(1, 0x7F);
-  matrix.writeDigitRaw(3, 0x7F);
-  matrix.writeDigitRaw(4, 0x7F);
-  matrix.writeDisplay();
-}
-
-void loop() {
-  matrix.setBrightness(brightness);
-  brightness = (brightness + 1) % 15;
-  matrix.writeDisplay();
-  delay(100);
-
 }
