@@ -7,7 +7,8 @@ class Volley {
     Volley(uint8_t score_0, uint8_t score_1, uint8_t score_2);
     void setScore(uint8_t index, uint8_t score);
     void setScores(uint8_t score_0, uint8_t score_1, uint8_t score_2);
-    void setTimestamp();
+    uint8_t getScore(uint8_t index);
+    void setTimestamp(unsigned long offset);
     unsigned long getTimestamp();
     
   private:
@@ -35,9 +36,14 @@ void Volley::setScores(uint8_t score_0, uint8_t score_1, uint8_t score_2)
   _scores[2] = score_2;
 }
 
-void Volley::setTimestamp()
+uint8_t Volley::getScore(uint8_t index)
 {
-  _timestamp = millis() / 1000;
+  return _scores[index];
+}
+
+void Volley::setTimestamp(unsigned long offset)
+{
+  _timestamp = (millis() + offset) / 1000;
 }
 
 unsigned long Volley::getTimestamp()
