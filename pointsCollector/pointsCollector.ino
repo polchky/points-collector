@@ -1,6 +1,27 @@
+#include "Volley.h"
+#include "VolleyManager.h"
+
+void setup()
+{
+  VolleyManager vm = VolleyManager();
+  Volley volley = Volley();
+}
+
+void loop()
+{
+  
+}
+
+
+
+
+
+/*
+
 #include <Wire.h> // Enable this line if using Arduino Uno, Mega, etc.
 #include <Adafruit_GFX.h>
 #include "Adafruit_LEDBackpack.h"
+#include "Adafruit_FRAM_I2C.h"
 #include <LinkedList.h>
 
 
@@ -10,9 +31,9 @@
 #define STATE_RECORDING 3
 #define STATE_HISTORY   4
 
-#define LONG_PRESS_MS 1000
-#define SLEEP_MS      50
-#define TIMEOUT_MS    5000
+#define LONG_PRESS_MS 	1000
+#define SLEEP_MS      	50
+#define TIMEOUT_MS    	5000
 
 #define DISPLAY_INF_MS    0
 #define DISPLAY_SHORT_MS  500
@@ -20,6 +41,8 @@
 
 #define COLUMN_INDEX 2
 #define DEFAULT_DISPLAY_INDEX 3
+
+#define DASH 1 << 6
 
 const uint8_t buttonsPins[4] = {0,1,2,3};
 
@@ -57,6 +80,8 @@ void updateDisplay(){
 /**
 * Update buttons and check for clicked events
 **/
+
+/**
 void update_buttons(){
   for(uint8_t i=0; i<4; i++){
     buttonPressed = digitalRead(buttonsPins[i]);
@@ -107,6 +132,7 @@ void displayNumber(uint8_t index, uint8_t number, uint8_t duration, bool clear){
 /**
 * Displays a line of symbols to signal an error
 **/
+/**
 void displayNope(){
   uint8_t temp[8] = ledDisplay->displaybuffer;
 
@@ -133,6 +159,7 @@ void do_send(){
 /**
 * Check for changes in state
 **/
+/**
 void do_idle(){
   if(buttonsClicked[0]){
     state = STATE_RECORDING;
@@ -149,6 +176,7 @@ void do_idle(){
 /**
 * Settings to change the screen brightness
 **/
+/**
 void do_settings(){
   bool changed = false;
   if(buttonsClicked[2] || timeIdle > TIMEOUT_MS){
@@ -220,3 +248,4 @@ void loop() {
   clear_buttons();
   ledDisplay.writeDisplay();
 }
+*/
