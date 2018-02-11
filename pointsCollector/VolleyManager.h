@@ -25,17 +25,23 @@ class VolleyManager
     boolean checkExists(uint16_t index);
     unsigned long getTimestamp(uint16_t index);
     void write(uint16_t index, Volley *volley);
+    uint8_t scoreToWriteable(uint8_t score);
+    uint8_t writeableToScore(uint8_t score);
 };
 
 
 VolleyManager::VolleyManager(uint8_t addr = MB85RC_DEFAULT_ADDRESS)
 {
-  Adafruit_FRAM_I2C _fram = Adafruit_FRAM_I2C();
+  _fram = Adafruit_FRAM_I2C();
   _fram.begin(addr);
+  /*for(uint16_t a=0; a < 255; a++){
+    _fram.write8(a, 0);
+  }*/
   _size = readSize();
   // set time offset
   if(_size > 0){
     _timeOffset = getTimestamp(getSize() - 1);
+    Serial.print("time offset: ");Serial.println(_timeOffset);
   } else {
     _timeOffset = 0;
   }
@@ -45,12 +51,22 @@ VolleyManager::VolleyManager(uint8_t addr = MB85RC_DEFAULT_ADDRESS)
 
 void VolleyManager::get(uint16_t index, Volley *volley)
 {
+  for(uint8_t a=0; a < 64; a++){
+    Serial.println(_fram.read8(a));
+  }
   if(!checkExists(index)) return;
-  
+  uint8_t value[3];
+  value[0] = _fram.read8(3 * index + 2);
+  value[1] = _fram.read8(3 * index + 3);
+  value[2] = _fram.read8(3 * index + 4);
+  volley->setScore(0, writeableToScore(value[0] >> 5));
+  volley->setScore(1, writeableToScore(value[0] >> 2 & 7));
+  volley->setScore(2, writeableToScore((value[0] & 11) << 1 | value[1] >> 7));
+  volley->setTimestamp(((uint16_t)value[1] & 127) << 8 | value[2]);
 }
 
 void VolleyManager::add(Volley *volley)
-{
+{ 
   if(_size >= 32768 - 5) return;
   volley->setTimestamp(_timeOffset);
   write(_size, volley);
@@ -84,9 +100,9 @@ void VolleyManager::write(uint16_t index, Volley *volley)
 {
   if(volley->getTimestamp() == 0) return;
   uint8_t value;
-  value = volley->getScore(0) << 5;
-  value |= volley->getScore(1) << 2;
-  value |= volley->getScore(2) >> 1;
+  value = scoreToWriteable(volley->getScore(0)) << 5;
+  value |= scoreToWriteable(volley->getScore(1)) << 2;
+  value |= scoreToWriteable(volley->getScore(2)) >> 1;
   _fram.write8(3 * index + 2, value);
   value = (uint8_t)(volley->getTimestamp() >> 8);
   // ensure the timestamp is not erasing the score value
@@ -122,11 +138,25 @@ unsigned long VolleyManager::getTimestamp(uint16_t index)
 {
   if(!checkExists(index)) return 0;
   unsigned long value;
-  value = ((unsigned long)_fram.read8(3 * (index + 1)) & 1111111) << 8;
-  value |= ((unsigned long)_fram.read8(3 * (index + 1)) + 1);
+  value = ((unsigned long)_fram.read8(3 * (index + 1)) & 127) << 8;
+  value |= ((unsigned long)_fram.read8(3 * (index + 1) + 1));
   return value;
 }
 
+uint8_t VolleyManager::scoreToWriteable(uint8_t score)
+{
+  if(score >= 6){
+    score -= 5;
+  }
+  return score;
+}
 
+uint8_t VolleyManager::writeableToScore(uint8_t score)
+{
+  if(score > 0){
+    score += 5;
+  }
+  return score;
+}
 
 #endif

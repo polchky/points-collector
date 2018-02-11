@@ -3,8 +3,17 @@
 
 void setup()
 {
+  Serial.begin(115200);
+  delay(1000);
   VolleyManager vm = VolleyManager();
   Volley volley = Volley();
+  volley.setScores(10, 9, 6);
+  vm.add(&volley);
+  vm.get(0, &volley);
+  Serial.println(volley.getScore(0));
+  Serial.println(volley.getScore(1));
+  Serial.println(volley.getScore(2));
+  Serial.println(volley.getTimestamp());
 }
 
 void loop()
