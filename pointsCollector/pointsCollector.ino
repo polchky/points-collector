@@ -1,5 +1,7 @@
 #include "Volley.h"
 #include "VolleyManager.h"
+#include "Display.h"
+
 
 void setup()
 {
@@ -10,10 +12,11 @@ void setup()
   volley.setScores(10, 9, 6);
   vm.add(&volley);
   vm.get(0, &volley);
-  Serial.println(volley.getScore(0));
-  Serial.println(volley.getScore(1));
-  Serial.println(volley.getScore(2));
-  Serial.println(volley.getTimestamp());
+
+  Display display = Display(0x70);
+  display.resetDisplay();
+  display.displayVolley(&volley);
+  display.writeDisplay();  
 }
 
 void loop()
@@ -28,8 +31,7 @@ void loop()
 /*
 
 #include <Wire.h> // Enable this line if using Arduino Uno, Mega, etc.
-#include <Adafruit_GFX.h>
-#include "Adafruit_LEDBackpack.h"
+
 #include "Adafruit_FRAM_I2C.h"
 #include <LinkedList.h>
 
