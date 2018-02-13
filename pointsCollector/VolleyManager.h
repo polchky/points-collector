@@ -40,12 +40,12 @@ VolleyManager::VolleyManager(uint8_t addr = MB85RC_DEFAULT_ADDRESS)
   _size = readSize();
   // set time offset
   if(_size > 0){
-    _timeOffset = getTimestamp(getSize() - 1);
+    _timeOffset = getTimestamp(_size - 1);
     Serial.print("time offset: ");Serial.println(_timeOffset);
   } else {
     _timeOffset = 0;
   }
-  
+
 }
 
 
@@ -56,17 +56,17 @@ void VolleyManager::get(uint16_t index, Volley *volley)
   }
   if(!checkExists(index)) return;
   uint8_t value[3];
-  value[0] = _fram.read8(3 * index + 2);
-  value[1] = _fram.read8(3 * index + 3);
-  value[2] = _fram.read8(3 * index + 4);
+  for(uint8_t i=0; i<3; i++){
+      value[i] = _fram.read8(3 * index + 2 + i);
+  }
   volley->setScore(0, writeableToScore(value[0] >> 5));
   volley->setScore(1, writeableToScore(value[0] >> 2 & 7));
-  volley->setScore(2, writeableToScore((value[0] & 11) << 1 | value[1] >> 7));
+  volley->setScore(2, writeableToScore((value[0] & 3) << 1 | value[1] >> 7));
   volley->setTimestamp(((uint16_t)value[1] & 127) << 8 | value[2]);
 }
 
 void VolleyManager::add(Volley *volley)
-{ 
+{
   if(_size >= 32768 - 5) return;
   volley->setTimestamp(_timeOffset);
   write(_size, volley);
