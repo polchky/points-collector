@@ -8,17 +8,18 @@ void setup()
   Serial.begin(115200);
   delay(1000);
   VolleyManager vm = VolleyManager();
-  Volley volley = Volley();
+  Volley volley = Volley(); 
   volley.setScores(10, 9, 6);
   vm.add(&volley);
   vm.get(0, &volley);
 
   Display display = Display(0x70);
-  display.resetDisplay();
-  display.displayVolley(&volley);
-  display.writeDisplay();  
+  display.resetDisplay(false);
+  display.displayVolley(&volley, true);
+  delay(2000);
+  display.displayError(true);
 }
-
+ 
 void loop()
 {
   
