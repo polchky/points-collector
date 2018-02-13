@@ -9,7 +9,8 @@
 class VolleyManager
 {
   public:
-    VolleyManager(uint8_t addr);
+    VolleyManager();
+    void begin(uint8_t addr);
     void get(uint16_t index, Volley *volley);
     void add(Volley *volley);
     void replace(uint16_t index, Volley *volley);
@@ -29,8 +30,12 @@ class VolleyManager
     uint8_t writeableToScore(uint8_t score);
 };
 
+VolleyManager::VolleyManager()
+{
+  
+}
 
-VolleyManager::VolleyManager(uint8_t addr = MB85RC_DEFAULT_ADDRESS)
+void VolleyManager::begin(uint8_t addr = MB85RC_DEFAULT_ADDRESS)
 {
   _fram = Adafruit_FRAM_I2C();
   _fram.begin(addr);

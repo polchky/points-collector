@@ -7,60 +7,87 @@
 
 #define BYTES_10    B01011101
 #define BYTES_ERROR B01000000
+const uint8_t DIGITS[4] = {0, 1, 3, 4};
 
 class Display {
   public: 
-    Display(uint8_t addr);
+    Display();
+    void begin(uint8_t addr);
     void resetDisplay(boolean update);
     void displayError(boolean update);
     void writeDisplay();
     void displayVolley(Volley *volley, boolean update);
+    boolean increaseBrightness();
+    boolean decreaseBrightness();
   private: 
-    Adafruit_7segment ledDisplay;
-
+    Adafruit_7segment _ledDisplay;
+    uint8_t _brightness;
 };
 
-Display::Display(uint8_t addr)
+Display::Display()
 {
-  ledDisplay = Adafruit_7segment();
-  ledDisplay.begin(addr);
+  
+}
+
+void Display::begin(uint8_t addr)
+{
+  _ledDisplay = Adafruit_7segment();
+  _ledDisplay.begin(addr);
+  _brightness = 10;
 }
 
 void Display::resetDisplay(boolean update)
 {
   for(int i=0; i<5; i++){
-    ledDisplay.writeDigitRaw(i, 0);
+    _ledDisplay.writeDigitRaw(i, 0);
   }
-  if(update) ledDisplay.writeDisplay();
+  if(update) _ledDisplay.writeDisplay();
 }
 
 void Display::displayError(boolean update)
 {
-  for(uint8_t i=0; i<5; i++){
-    if(i == 2) continue;
-    ledDisplay.writeDigitRaw(i, BYTES_ERROR);
+  for(uint8_t i=0; i<4; i++){
+    _ledDisplay.writeDigitRaw(DIGITS[i], BYTES_ERROR);
   }
-  if(update) ledDisplay.writeDisplay();
+  if(update) _ledDisplay.writeDisplay();
 }
 
 void Display::writeDisplay()
 {
-  ledDisplay.writeDisplay();
+  _ledDisplay.writeDisplay();
 }
 
 void Display::displayVolley(Volley *volley, boolean update)
 {
   for(uint8_t i=0; i<3; i++){
-    uint8_t index = i + 1;
-    if(index >= 2) index++;
+    uint8_t index = DIGITS[i + 1];
     if(volley->getScore(i) == 10){
-      ledDisplay.writeDigitRaw(index, BYTES_10);
+      _ledDisplay.writeDigitRaw(index, BYTES_10);
     }else{
-      ledDisplay.writeDigitNum(index, volley->getScore(i));
+      _ledDisplay.writeDigitNum(index, volley->getScore(i));
     }
   }
-  if(update) ledDisplay.writeDisplay();
+  if(update) _ledDisplay.writeDisplay();
 }
 
+boolean Display::increaseBrightness()
+{
+  if(_brightness < 15){
+    _brightness++;
+    _ledDisplay.setBrightness(_brightness);
+    return true;
+  }
+  return false;
+}
+
+boolean Display::decreaseBrightness()
+{
+  if(_brightness > 0){
+    _brightness--;
+    _ledDisplay.setBrightness(_brightness);
+    return true;
+  }
+  return false;
+}
 
 #endif

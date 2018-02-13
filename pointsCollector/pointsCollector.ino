@@ -1,28 +1,44 @@
 #include "Volley.h"
 #include "VolleyManager.h"
 #include "Display.h"
+#include "InputManager.h"
+
+#define THUMB   2
+#define INDEX   16
+#define MIDDLE  4
+#define RING    5
+
+Display display = Display();
+VolleyManager volleyManager = VolleyManager();
+InputManager inputManager = InputManager();
 
 
 void setup()
 {
   Serial.begin(115200);
   delay(1000);
-  VolleyManager vm = VolleyManager();
+  volleyManager.begin();
+  inputManager.begin(THUMB, INDEX, MIDDLE, RING);
   Volley volley = Volley(); 
   volley.setScores(10, 9, 6);
-  vm.add(&volley);
-  vm.get(0, &volley);
-
-  Display display = Display(0x70);
+  volleyManager.add(&volley);
+  volleyManager.get(0, &volley);
+  display.begin(0x70);
   display.resetDisplay(false);
   display.displayVolley(&volley, true);
-  delay(2000);
-  display.displayError(true);
+  delay(1000);
+
+  pinMode(16, INPUT);
 }
  
 void loop()
 {
-  
+  if(digitalRead(16) == HIGH){
+    display.displayError(false);
+  }else{
+    display.resetDisplay(false);
+  }
+  display.writeDisplay();
 }
 
 
@@ -96,7 +112,7 @@ void updateDisplay(){
 /**
 void update_buttons(){
   for(uint8_t i=0; i<4; i++){
-    buttonPressed = digitalRead(buttonsPins[i]);
+    _buttonPressed = digitalRead(buttonsPins[i]);
     // Button is pressed
     if(buttonPressed){
       // Reset idle counter
@@ -120,8 +136,8 @@ void update_buttons(){
     }
     buttonsPressed[i] = buttonsPressed;
   }
-}
-
+}**/
+/**
 void clear_buttons(){
   for(uint8_t i=0; i<4; i++){
     buttonsClicked[i] = false;
