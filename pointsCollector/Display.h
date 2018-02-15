@@ -7,19 +7,21 @@
 
 #define BYTES_10            B01011101
 #define BYTES_ERROR         B01000000
-#define BLINK_CYCLE_MS      250
+#define BYTES_DOT           B10000000
 #define BLOCK_DELAY_MS      10
-#define DEFAULT_DISPLAY_MS  1000
+#define DEFAULT_DISPLAY_MS  500
 
 const uint8_t DIGITS[4] = {0, 1, 3, 4};
-const uint8_t PATTERN_ERROR[5] = {BYTES_ERROR, BYTES_ERROR, 0, BYTES_ERROR, BYTES_ERROR};
-const uint8_t PATTERN_SUCCESS[5] = {1, 1, 1, 1, 1};
+const uint8_t PATTERN_ERROR[4] = {BYTES_ERROR, BYTES_ERROR, BYTES_ERROR, BYTES_ERROR};
+const uint8_t PATTERN_SUCCESS[4] = {1, 1, 1, 1};
 
 class Display {
   public: 
     Display();
-    void begin(uint8_t addr, uint8_t brightness);
+    void begin(uint8_t addr);
     void resetDisplay(boolean update);
+    void displayIdle(unsigned long idleStart);
+    void println(uint16_t number);
     void displaySuccess(unsigned long ms);
     void displayError(unsigned long ms);
     void writeDisplay();
@@ -27,17 +29,15 @@ class Display {
     void setBrightness(uint8_t brightness);
     void displayBrightness(uint8_t brightness, boolean update);
   private: 
-    void blink(unsigned long ms, const uint8_t pattern[5]);
     Adafruit_7segment _ledDisplay;
 };
 
 Display::Display(){}
 
-void Display::begin(uint8_t addr, uint8_t brightness)
+void Display::begin(uint8_t addr)
 {
   _ledDisplay = Adafruit_7segment();
   _ledDisplay.begin(addr);
-  _ledDisplay.setBrightness(brightness);
 }
 
 void Display::resetDisplay(boolean update)
@@ -46,35 +46,45 @@ void Display::resetDisplay(boolean update)
   if(update) _ledDisplay.writeDisplay();
 }
 
-void Display::blink(unsigned long ms, const uint8_t pattern[5])
+void Display::displayIdle(unsigned long idleStart)
 {
-  unsigned long start = millis();
-  unsigned long now = start;
-  boolean display;
-  while(now < start + ms){
-    now = millis();
-    if((now - start) % BLINK_CYCLE_MS < BLINK_CYCLE_MS / 2){
-      for(uint8_t i=0; i<5; i++){
-        _ledDisplay.writeDigitRaw(DIGITS[i], pattern[i]); 
-      }
+  uint8_t cycle = (uint8_t) ((millis() - idleStart) / DEFAULT_DISPLAY_MS) % 4;
+  for(uint8_t i=0; i<4; i++){
+    if(i == cycle){
+      _ledDisplay.writeDigitRaw(DIGITS[i], BYTES_DOT);
     }else{
-      _ledDisplay.clear();
+      _ledDisplay.writeDigitRaw(DIGITS[i], 0);
     }
-    _ledDisplay.writeDisplay();
-    delay(BLOCK_DELAY_MS);
   }
-  _ledDisplay.clear();
+  _ledDisplay.writeDisplay();
+}
+
+void Display::println(uint16_t number)
+{
+  _ledDisplay.println(number);
   _ledDisplay.writeDisplay();
 }
 
 void Display::displaySuccess(unsigned long ms = DEFAULT_DISPLAY_MS)
 {
-  blink(ms, PATTERN_SUCCESS);
+  for(uint8_t i=0; i<4; i++){
+    _ledDisplay.writeDigitRaw(DIGITS[i], PATTERN_SUCCESS[i]); 
+  }
+  _ledDisplay.writeDisplay();
+  delay(DEFAULT_DISPLAY_MS);
+  _ledDisplay.clear();
+  _ledDisplay.writeDisplay();
 }
 
 void Display::displayError(unsigned long ms = DEFAULT_DISPLAY_MS)
 {
-  blink(ms, PATTERN_ERROR);
+  for(uint8_t i=0; i<4; i++){
+    _ledDisplay.writeDigitRaw(DIGITS[i], PATTERN_ERROR[i]); 
+  }
+  _ledDisplay.writeDisplay();
+  delay(DEFAULT_DISPLAY_MS);
+  _ledDisplay.clear();
+  _ledDisplay.writeDisplay();
 }
 
 void Display::writeDisplay()

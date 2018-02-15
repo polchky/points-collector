@@ -17,7 +17,7 @@
 #define STATE_REMOVING  5
 
 #define BRIGHTNESS_FRAM_INDEX   32767
-#define DELAY_DISPLAY_SHORT     300
+#define DISPLAY_SHORT_MS     500
 
 Display display = Display();
 VolleyManager volleyManager = VolleyManager();
@@ -27,6 +27,7 @@ Volley volley;
 
 uint8_t state = STATE_IDLE;
 uint8_t brightness;
+unsigned long idleStart;
 uint16_t volleyIndex;
 uint8_t fingers[3] = {INDEX, MIDDLE, RING};
 
@@ -34,27 +35,25 @@ void setup()
 {
   // DEBUG
   Serial.begin(115200);
-  delay(1000);
-
 
   
-  display.begin(0x70, 15);
+  
+  display.begin(0x70);
   volleyManager.begin();
   inputManager.begin(THUMB, INDEX, MIDDLE, RING);
   volley = Volley(); 
   fram.begin(MB85RC_DEFAULT_ADDRESS);
-
+  
   brightness = readBrightness();
   display.setBrightness(brightness);
-  delay(10);
-  display.resetDisplay(true);  
+
+  enterIdle();
   
 }
  
 void loop()
 {
   inputManager.update();
-  
   switch(state){
     case STATE_IDLE:
     doIdle();
@@ -88,8 +87,9 @@ void loop()
 
 void enterIdle()
 {
+  Serial.println("entering idle state");
   state = STATE_IDLE;
-  display.resetDisplay(true);
+  idleStart = millis();
 }
 
 void doIdle(){
@@ -103,11 +103,14 @@ void doIdle(){
     enterSettings();    
   }else if(inputManager.longClicked(RING)){
     enterRemoving();
+  }else{
+    display.displayIdle(idleStart);
   }
 }
 
 void enterRecording()
 {
+  Serial.println("entering recording state");
   state = STATE_RECORDING;
   volley.setScores(10, 10, 10);
 }
@@ -119,7 +122,6 @@ void doRecording()
     display.displaySuccess();
     enterIdle();
   }else if (inputManager.longClicked(THUMB)){
-    display.displayError();
     enterIdle();
   }else{
     for(uint8_t i=0; i<3; i++){
@@ -140,11 +142,14 @@ void doSending()
 
 void enterHistory()
 {
+  Serial.println("entering history state");
   state = STATE_HISTORY;
   uint16_t size = volleyManager.getSize();
   if(size > 0){
     volleyIndex = size - 1;
     volleyManager.get(volleyIndex, &volley);
+    display.println(volleyIndex);
+    delay(DISPLAY_SHORT_MS);
   }else{
     display.displayError();
     enterIdle();
@@ -161,8 +166,8 @@ void doHistory()
       if(volleyIndex < size - 1){
         volleyIndex++;
         volleyManager.get(volleyIndex, &volley);
-        display.resetDisplay(true);
-        delay(DELAY_DISPLAY_SHORT);
+        display.println(volleyIndex);
+        delay(DISPLAY_SHORT_MS);
       }else{
         display.displayError();
       }
@@ -170,8 +175,8 @@ void doHistory()
       if(volleyIndex > 0){
         volleyIndex--;
         volleyManager.get(volleyIndex, &volley);
-        display.resetDisplay(true);
-        delay(DELAY_DISPLAY_SHORT);
+        display.println(volleyIndex);
+        delay(DISPLAY_SHORT_MS);
       }else {
         display.displayError();
       }
@@ -182,6 +187,7 @@ void doHistory()
 
 void enterRemoving()
 {
+  Serial.println("entering removing state");
   state = STATE_REMOVING;
   uint16_t size = volleyManager.getSize();
   if(size > 0){
@@ -207,6 +213,7 @@ void doRemoving()
 
 void enterSettings()
 {
+  Serial.println("entering settings state");
   state = STATE_SETTINGS;
   display.displayBrightness(brightness, true);
 }
@@ -216,6 +223,7 @@ void doSettings()
   if(inputManager.clicked(THUMB)){
     writeBrightness(brightness);
     display.displaySuccess();
+    enterIdle();
   }else if(inputManager.longClicked(THUMB)){
     brightness = readBrightness();
     display.setBrightness(brightness);

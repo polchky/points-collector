@@ -9,7 +9,8 @@
 #define MIDDLE  2
 #define RING    3
 
-#define LONG_PRESS_MS 800
+#define SHORT_PRESS_MS  10
+#define LONG_PRESS_MS   500
 
 
 
@@ -71,7 +72,7 @@ void InputManager::update()
   for(uint8_t i=0; i<4; i++){
     _buttonsClicked[i] = false;
     _buttonsLongClicked[i] = false;
-    pressed = digitalRead(_pins[i]);
+    pressed = digitalRead(_pins[i]) == HIGH;
     // Button is currently pressed
     if(pressed){
       _timeIdle = ms;
@@ -81,7 +82,7 @@ void InputManager::update()
       }
     }
     // Button was pressed for long enough to trigger longClicked
-    if(_buttonsPressedStart[i] + LONG_PRESS_MS >= ms){
+    if(_buttonsPressedStart[i] > 0 && _buttonsPressedStart[i] + LONG_PRESS_MS <= ms){
       _buttonsLongClicked[i] = true;
       _buttonsPressedStart[i] = 0;
     }
@@ -89,7 +90,9 @@ void InputManager::update()
     if(!pressed){
       // Button was just released
       if(_buttonsPressedStart[i] > 0){
-        _buttonsClicked[i] = true;
+        if(_buttonsPressedStart[i] + SHORT_PRESS_MS <= ms){
+          _buttonsClicked[i] = true;
+        }
         _buttonsPressedStart[i] = 0;
       }
     }
