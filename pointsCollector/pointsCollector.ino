@@ -35,6 +35,7 @@ uint8_t fingers[3] = {INDEX, MIDDLE, RING};
 
 void setup()
 {
+
   display.begin(0x70);
   volleyManager.begin();
   inputManager.begin(THUMB, INDEX, MIDDLE, RING);

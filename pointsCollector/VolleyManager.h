@@ -103,8 +103,8 @@ void VolleyManager::write(uint16_t index, Volley *volley)
   _fram.write8(3 * index, value);
   value = (uint8_t)(volley->getTimestamp() >> 8);
   // ensure the timestamp is not erasing the score value
-  value &= 255;
-  value |= volley->getScore(3) << 7;
+  value &= B01111111;
+  value |= scoreToWriteable(volley->getScore(2)) << 7;
   _fram.write8(3 * index + 1, value);
   value = (uint8_t)(volley->getTimestamp());
   _fram.write8(3 * index + 2, value);
