@@ -105,15 +105,15 @@ void doRecording()
 {
   if(inputManager.clicked(THUMB)){
     volleyManager.add(&volley);
+    display.displaySuccess();
     goIdle();
   }else if (inputManager.longClicked(THUMB)){
+    display.displayError();
     goIdle();
   }else{
     for(uint8_t i=0; i<3; i++){
       if(inputManager.clicked(fingers[i])){
         volley.decreaseScore(i);
-        Serial.println("buttons clicked!");
-        Serial.println(volley.getScore(i));
       }else if(inputManager.longClicked(fingers[i])){
         volley.setScore(i, 10);
       }

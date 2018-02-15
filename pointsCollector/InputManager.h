@@ -20,6 +20,7 @@ class InputManager{
     boolean clicked(uint8_t button);
     boolean longClicked(uint8_t button);
     void update();
+    void resetButtons();
   private:
     uint8_t findButton(uint8_t pin);
     boolean isOnlyPressed(uint8_t index);
@@ -93,6 +94,14 @@ void InputManager::update()
       }
     }
     _buttonsPressed[i] = pressed;
+  }
+}
+
+void InputManager::resetButtons()
+{
+  for(uint8_t i=0; i<4; i++){
+    _buttonsPressedStart[i] = 0;
+    _buttonsPressed[i] = true;
   }
 }
 
