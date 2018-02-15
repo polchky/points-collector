@@ -12,8 +12,8 @@
 #define DEFAULT_DISPLAY_MS  1000
 
 const uint8_t DIGITS[4] = {0, 1, 3, 4};
-const uint8_t PATTERN_ERROR[4] = {BYTES_ERROR, BYTES_ERROR, BYTES_ERROR, BYTES_ERROR};
-const uint8_t PATTERN_SUCCESS[4] = {0, 0, 0, 0};
+const uint8_t PATTERN_ERROR[5] = {BYTES_ERROR, BYTES_ERROR, 0, BYTES_ERROR, BYTES_ERROR};
+const uint8_t PATTERN_SUCCESS[5] = {1, 1, 1, 1, 1};
 
 class Display {
   public: 
@@ -27,7 +27,7 @@ class Display {
     void setBrightness(uint8_t brightness);
     void displayBrightness(uint8_t brightness, boolean update);
   private: 
-    void blink(unsigned long ms, const uint8_t pattern[4]);
+    void blink(unsigned long ms, const uint8_t pattern[5]);
     Adafruit_7segment _ledDisplay;
 };
 
@@ -46,7 +46,7 @@ void Display::resetDisplay(boolean update)
   if(update) _ledDisplay.writeDisplay();
 }
 
-void Display::blink(unsigned long ms, const uint8_t pattern[4])
+void Display::blink(unsigned long ms, const uint8_t pattern[5])
 {
   unsigned long start = millis();
   unsigned long now = start;
@@ -54,7 +54,7 @@ void Display::blink(unsigned long ms, const uint8_t pattern[4])
   while(now < start + ms){
     now = millis();
     if((now - start) % BLINK_CYCLE_MS < BLINK_CYCLE_MS / 2){
-      for(uint8_t i=0; i<4; i++){
+      for(uint8_t i=0; i<5; i++){
         _ledDisplay.writeDigitRaw(DIGITS[i], pattern[i]); 
       }
     }else{

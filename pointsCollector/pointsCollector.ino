@@ -24,10 +24,10 @@ VolleyManager volleyManager = VolleyManager();
 InputManager inputManager = InputManager();
 Adafruit_FRAM_I2C fram = Adafruit_FRAM_I2C();
 Volley volley;
-uint8_t state = STATE_IDLE;
 
+uint8_t state = STATE_IDLE;
 uint8_t brightness;
-uint16_t index;
+uint16_t volleyIndex;
 uint8_t fingers[3] = {INDEX, MIDDLE, RING};
 
 void setup()
@@ -47,16 +47,7 @@ void setup()
   brightness = readBrightness();
   display.setBrightness(brightness);
   delay(10);
-  display.resetDisplay(true);
-
-  
-  
-  /**volley.setScores(10, 9, 6);
-  volleyManager.add(&volley);
-  volleyManager.get(0, &volley);
-  display.displayVolley(&volley, true);
-  delay(3000);**/
-  
+  display.resetDisplay(true);  
   
 }
  
@@ -86,7 +77,7 @@ void loop()
     break;
 
     case STATE_REMOVING:
-    deRemoving();
+    doRemoving();
     break;
 
     default:
@@ -95,27 +86,30 @@ void loop()
 
 }
 
+void enterIdle()
+{
+  state = STATE_IDLE;
+  display.resetDisplay(true);
+}
+
 void doIdle(){
   if(inputManager.clicked(THUMB)){
-    state = STATE_RECORDING;
-    volley.setScores(10, 10, 10);
+    enterRecording();
   }else if(inputManager.longClicked(THUMB)){
     state = STATE_SENDING;
   }else if(inputManager.longClicked(INDEX)){
-    state = STATE_HISTORY;
-    uint16_t size = volleyManager.getSize();
-    if(size > 0){
-      index = size - 1;
-      volley = volleyManager.get(index, &volley);
-    }else{
-      display.displayError();
-      goIdle();
-    }
+    enterHistory();
   }else if(inputManager.longClicked(MIDDLE)){
-    state = STATE_SETTINGS;
-  }else if(inputManager.longClicked(RING){
-    state = STATE_REMOVING;
+    enterSettings();    
+  }else if(inputManager.longClicked(RING)){
+    enterRemoving();
   }
+}
+
+void enterRecording()
+{
+  state = STATE_RECORDING;
+  volley.setScores(10, 10, 10);
 }
 
 void doRecording()
@@ -123,10 +117,10 @@ void doRecording()
   if(inputManager.clicked(THUMB)){
     volleyManager.add(&volley);
     display.displaySuccess();
-    goIdle();
+    enterIdle();
   }else if (inputManager.longClicked(THUMB)){
     display.displayError();
-    goIdle();
+    enterIdle();
   }else{
     for(uint8_t i=0; i<3; i++){
       if(inputManager.clicked(fingers[i])){
@@ -144,27 +138,40 @@ void doSending()
   
 }
 
+void enterHistory()
+{
+  state = STATE_HISTORY;
+  uint16_t size = volleyManager.getSize();
+  if(size > 0){
+    volleyIndex = size - 1;
+    volleyManager.get(volleyIndex, &volley);
+  }else{
+    display.displayError();
+    enterIdle();
+  }
+}
+
 void doHistory()
 {
   uint16_t size = volleyManager.getSize();
   if(inputManager.longClicked(THUMB)){
-    goIdle();
+    enterIdle();
   }else{
     if(inputManager.clicked(INDEX)){
-      if(index < size - 1){
-        index++;
-        volleyManager.get(index, &volley);
+      if(volleyIndex < size - 1){
+        volleyIndex++;
+        volleyManager.get(volleyIndex, &volley);
         display.resetDisplay(true);
         delay(DELAY_DISPLAY_SHORT);
       }else{
         display.displayError();
       }
     }else if(inputManager.clicked(RING)){
-      if(index > 0){
-        index--;
-        volleyManager.get(index, &volley);
+      if(volleyIndex > 0){
+        volleyIndex--;
+        volleyManager.get(volleyIndex, &volley);
         display.resetDisplay(true);
-        delay(DISPLAY_INTERVAL_SHORT);
+        delay(DELAY_DISPLAY_SHORT);
       }else {
         display.displayError();
       }
@@ -173,20 +180,59 @@ void doHistory()
   }
 }
 
+void enterRemoving()
+{
+  state = STATE_REMOVING;
+  uint16_t size = volleyManager.getSize();
+  if(size > 0){
+    volleyIndex = size - 1;
+    volleyManager.get(volleyIndex, &volley);
+    display.displayVolley(&volley, true);
+  }else{
+    display.displayError();
+    enterIdle();
+  }
+}
+
 void doRemoving()
 {
-  
+  if(inputManager.clicked(THUMB)){
+    volleyManager.remove(volleyIndex);
+    display.displaySuccess();
+    enterIdle();
+  }else if(inputManager.longClicked(THUMB)){
+    enterIdle();
+  }
+}
+
+void enterSettings()
+{
+  state = STATE_SETTINGS;
+  display.displayBrightness(brightness, true);
 }
 
 void doSettings()
 {
-  
-}
-
-void goIdle()
-{
-  state = STATE_IDLE;
-  display.resetDisplay(true);
+  if(inputManager.clicked(THUMB)){
+    writeBrightness(brightness);
+    display.displaySuccess();
+  }else if(inputManager.longClicked(THUMB)){
+    brightness = readBrightness();
+    display.setBrightness(brightness);
+    enterIdle();
+  }else if(inputManager.clicked(INDEX)){
+    if(brightness < 15){
+      brightness++;
+      display.setBrightness(brightness);
+      display.displayBrightness(brightness, true);
+    }
+  }else if(inputManager.clicked(RING)){
+    if(brightness > 0){
+      brightness--;
+      display.setBrightness(brightness);
+      display.displayBrightness(brightness, true);
+    }
+  }
 }
 
 uint8_t readBrightness()
