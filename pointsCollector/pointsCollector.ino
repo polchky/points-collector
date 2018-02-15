@@ -28,16 +28,13 @@ Volley volley;
 uint8_t state = STATE_IDLE;
 uint8_t brightness;
 unsigned long idleStart;
+unsigned long misc;
+boolean volleyDisplayed;
 uint16_t volleyIndex;
 uint8_t fingers[3] = {INDEX, MIDDLE, RING};
 
 void setup()
 {
-  // DEBUG
-  Serial.begin(115200);
-
-  
-  
   display.begin(0x70);
   volleyManager.begin();
   inputManager.begin(THUMB, INDEX, MIDDLE, RING);
@@ -87,7 +84,6 @@ void loop()
 
 void enterIdle()
 {
-  Serial.println("entering idle state");
   state = STATE_IDLE;
   idleStart = millis();
 }
@@ -110,7 +106,6 @@ void doIdle(){
 
 void enterRecording()
 {
-  Serial.println("entering recording state");
   state = STATE_RECORDING;
   volley.setScores(10, 10, 10);
 }
@@ -142,14 +137,14 @@ void doSending()
 
 void enterHistory()
 {
-  Serial.println("entering history state");
   state = STATE_HISTORY;
+  misc = millis();
+  volleyDisplayed = false;
   uint16_t size = volleyManager.getSize();
   if(size > 0){
     volleyIndex = size - 1;
     volleyManager.get(volleyIndex, &volley);
     display.println(volleyIndex);
-    delay(DISPLAY_SHORT_MS);
   }else{
     display.displayError();
     enterIdle();
@@ -166,28 +161,29 @@ void doHistory()
       if(volleyIndex < size - 1){
         volleyIndex++;
         volleyManager.get(volleyIndex, &volley);
-        display.println(volleyIndex);
-        delay(DISPLAY_SHORT_MS);
-      }else{
-        display.displayError();
       }
+      display.println(volleyIndex);
+      misc = millis();
+      volleyDisplayed = false;
+
     }else if(inputManager.clicked(RING)){
       if(volleyIndex > 0){
         volleyIndex--;
         volleyManager.get(volleyIndex, &volley);
-        display.println(volleyIndex);
-        delay(DISPLAY_SHORT_MS);
-      }else {
-        display.displayError();
       }
+      display.println(volleyIndex);
+      misc = millis();
+      volleyDisplayed = false;
+
     }
+  }
+  if(misc + DISPLAY_SHORT_MS <= millis() && !volleyDisplayed){
     display.displayVolley(&volley, true);
   }
 }
 
 void enterRemoving()
 {
-  Serial.println("entering removing state");
   state = STATE_REMOVING;
   uint16_t size = volleyManager.getSize();
   if(size > 0){
@@ -213,7 +209,6 @@ void doRemoving()
 
 void enterSettings()
 {
-  Serial.println("entering settings state");
   state = STATE_SETTINGS;
   display.displayBrightness(brightness, true);
 }

@@ -42,7 +42,6 @@ void VolleyManager::begin(uint8_t addr = MB85RC_DEFAULT_ADDRESS)
   // set time offset
   if(_size > 0){
     _timeOffset = getTimestamp(_size - 1);
-    Serial.print("time offset: ");Serial.println(_timeOffset);
   } else {
     _timeOffset = 0;
   }
