@@ -14,8 +14,10 @@
 #define STATE_SETTINGS  2
 #define STATE_RECORDING 3
 #define STATE_HISTORY   4
+#define STATE_REMOVING  5
 
-#define BRIGHTNESS_FRAM_INDEX 32767
+#define BRIGHTNESS_FRAM_INDEX   32767
+#define DELAY_DISPLAY_SHORT     300
 
 Display display = Display();
 VolleyManager volleyManager = VolleyManager();
@@ -25,6 +27,7 @@ Volley volley;
 uint8_t state = STATE_IDLE;
 
 uint8_t brightness;
+uint16_t index;
 uint8_t fingers[3] = {INDEX, MIDDLE, RING};
 
 void setup()
@@ -82,6 +85,10 @@ void loop()
     doHistory();
     break;
 
+    case STATE_REMOVING:
+    deRemoving();
+    break;
+
     default:
     break;
   }
@@ -96,8 +103,18 @@ void doIdle(){
     state = STATE_SENDING;
   }else if(inputManager.longClicked(INDEX)){
     state = STATE_HISTORY;
+    uint16_t size = volleyManager.getSize();
+    if(size > 0){
+      index = size - 1;
+      volley = volleyManager.get(index, &volley);
+    }else{
+      display.displayError();
+      goIdle();
+    }
   }else if(inputManager.longClicked(MIDDLE)){
     state = STATE_SETTINGS;
+  }else if(inputManager.longClicked(RING){
+    state = STATE_REMOVING;
   }
 }
 
@@ -128,6 +145,35 @@ void doSending()
 }
 
 void doHistory()
+{
+  uint16_t size = volleyManager.getSize();
+  if(inputManager.longClicked(THUMB)){
+    goIdle();
+  }else{
+    if(inputManager.clicked(INDEX)){
+      if(index < size - 1){
+        index++;
+        volleyManager.get(index, &volley);
+        display.resetDisplay(true);
+        delay(DELAY_DISPLAY_SHORT);
+      }else{
+        display.displayError();
+      }
+    }else if(inputManager.clicked(RING)){
+      if(index > 0){
+        index--;
+        volleyManager.get(index, &volley);
+        display.resetDisplay(true);
+        delay(DISPLAY_INTERVAL_SHORT);
+      }else {
+        display.displayError();
+      }
+    }
+    display.displayVolley(&volley, true);
+  }
+}
+
+void doRemoving()
 {
   
 }
