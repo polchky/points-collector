@@ -23,10 +23,7 @@ class Display {
     Adafruit_7segment _ledDisplay;
 };
 
-Display::Display()
-{
-  
-}
+Display::Display(){}
 
 void Display::begin(uint8_t addr, uint8_t brightness)
 {

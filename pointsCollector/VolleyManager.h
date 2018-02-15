@@ -32,10 +32,7 @@ class VolleyManager
     uint8_t writeableToScore(uint8_t score);
 };
 
-VolleyManager::VolleyManager()
-{
-  
-}
+VolleyManager::VolleyManager(){}
 
 void VolleyManager::begin(uint8_t addr = MB85RC_DEFAULT_ADDRESS)
 {

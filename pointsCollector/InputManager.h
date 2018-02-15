@@ -32,10 +32,7 @@ class InputManager{
     Adafruit_FRAM_I2C _fram;
 };
 
-InputManager::InputManager()
-{
-  
-}
+InputManager::InputManager(){}
 
 void InputManager::begin(uint8_t thumb, uint8_t index, uint8_t middle, uint8_t ring, uint8_t addr = MB85RC_DEFAULT_ADDRESS)
 {
