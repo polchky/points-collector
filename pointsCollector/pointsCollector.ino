@@ -35,13 +35,13 @@ uint8_t fingers[3] = {INDEX, MIDDLE, RING};
 
 void setup()
 {
-  display.begin(0x70);
   volleyManager.begin();
   inputManager.begin(THUMB, INDEX, MIDDLE, RING);
   volley = Volley(); 
   fram.begin(MB85RC_DEFAULT_ADDRESS);
   
   brightness = readBrightness();
+  display.begin(0x70);
   display.setBrightness(brightness);
 
   enterIdle();
