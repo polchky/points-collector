@@ -1,6 +1,7 @@
+#include <bluefruit.h>
 #include "Volley.h"
 #include "VolleyManager.h"
-#include "Display.h"
+#include "DisplayManager.h"
 #include "InputManager.h"
 #include "Adafruit_FRAM_I2C.h"
 
@@ -19,7 +20,7 @@
 #define BRIGHTNESS_FRAM_INDEX   32767
 #define DISPLAY_SHORT_MS     500
 
-Display display = Display();
+DisplayManager displayManager = DisplayManager();
 VolleyManager volleyManager = VolleyManager();
 InputManager inputManager = InputManager();
 Adafruit_FRAM_I2C fram = Adafruit_FRAM_I2C();
@@ -41,8 +42,8 @@ void setup()
   fram.begin(MB85RC_DEFAULT_ADDRESS);
   
   brightness = readBrightness();
-  display.begin(0x70);
-  display.setBrightness(brightness);
+  displayManager.begin(0x70);
+  displayManager.setBrightness(brightness);
 
   enterIdle();
 
@@ -101,7 +102,7 @@ void doIdle(){
   }else if(inputManager.longClicked(RING)){
     enterRemoving();
   }else{
-    display.displayIdle(idleStart);
+    displayManager.displayIdle(idleStart);
   }
 }
 
@@ -115,7 +116,7 @@ void doRecording()
 {
   if(inputManager.clicked(THUMB)){
     volleyManager.add(&volley);
-    display.displaySuccess();
+    displayManager.displaySuccess();
     enterIdle();
   }else if (inputManager.longClicked(THUMB)){
     enterIdle();
@@ -127,7 +128,7 @@ void doRecording()
         volley.setScore(i, 10);
       }
     }
-    display.displayVolley(&volley, true);
+    displayManager.displayVolley(&volley, true);
   }
 }
 
@@ -145,9 +146,9 @@ void enterHistory()
   if(size > 0){
     volleyIndex = size - 1;
     volleyManager.get(volleyIndex, &volley);
-    display.println(volleyIndex);
+    displayManager.println(volleyIndex);
   }else{
-    display.displayError();
+    displayManager.displayError();
     enterIdle();
   }
 }
@@ -163,7 +164,7 @@ void doHistory()
         volleyIndex++;
         volleyManager.get(volleyIndex, &volley);
       }
-      display.println(volleyIndex);
+      displayManager.println(volleyIndex);
       misc = millis();
       volleyDisplayed = false;
 
@@ -172,14 +173,14 @@ void doHistory()
         volleyIndex--;
         volleyManager.get(volleyIndex, &volley);
       }
-      display.println(volleyIndex);
+      displayManager.println(volleyIndex);
       misc = millis();
       volleyDisplayed = false;
 
     }
   }
   if(misc + DISPLAY_SHORT_MS <= millis() && !volleyDisplayed){
-    display.displayVolley(&volley, true);
+    displayManager.displayVolley(&volley, true);
   }
 }
 
@@ -190,9 +191,9 @@ void enterRemoving()
   if(size > 0){
     volleyIndex = size - 1;
     volleyManager.get(volleyIndex, &volley);
-    display.displayVolley(&volley, true);
+    displayManager.displayVolley(&volley, true);
   }else{
-    display.displayError();
+    displayManager.displayError();
     enterIdle();
   }
 }
@@ -201,7 +202,7 @@ void doRemoving()
 {
   if(inputManager.clicked(THUMB)){
     volleyManager.remove(volleyIndex);
-    display.displaySuccess();
+    displayManager.displaySuccess();
     enterIdle();
   }else if(inputManager.longClicked(THUMB)){
     enterIdle();
@@ -211,30 +212,30 @@ void doRemoving()
 void enterSettings()
 {
   state = STATE_SETTINGS;
-  display.displayBrightness(brightness, true);
+  displayManager.displayBrightness(brightness, true);
 }
 
 void doSettings()
 {
   if(inputManager.clicked(THUMB)){
     writeBrightness(brightness);
-    display.displaySuccess();
+    displayManager.displaySuccess();
     enterIdle();
   }else if(inputManager.longClicked(THUMB)){
     brightness = readBrightness();
-    display.setBrightness(brightness);
+    displayManager.setBrightness(brightness);
     enterIdle();
   }else if(inputManager.clicked(INDEX)){
     if(brightness < 15){
       brightness++;
-      display.setBrightness(brightness);
-      display.displayBrightness(brightness, true);
+      displayManager.setBrightness(brightness);
+      displayManager.displayBrightness(brightness, true);
     }
   }else if(inputManager.clicked(RING)){
     if(brightness > 0){
       brightness--;
-      display.setBrightness(brightness);
-      display.displayBrightness(brightness, true);
+      displayManager.setBrightness(brightness);
+      displayManager.displayBrightness(brightness, true);
     }
   }
 }

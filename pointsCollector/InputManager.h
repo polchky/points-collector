@@ -1,5 +1,5 @@
-#ifndef DisplayManager_h
-#define DisplayManager_h
+#ifndef InputManager_h
+#define InputManager_h
 
 #include "Adafruit_FRAM_I2C.h"
 
