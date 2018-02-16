@@ -53,7 +53,7 @@ uint8_t Volley::getScore(uint8_t index)
 
 void Volley::setTimestamp(unsigned long offset)
 {
-  _timestamp = (millis() + offset) / 1000;
+  _timestamp = millis() / 1000 + offset;
 }
 
 unsigned long Volley::getTimestamp()

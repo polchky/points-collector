@@ -64,7 +64,7 @@ void VolleyManager::get(uint16_t index, Volley *volley)
 
 void VolleyManager::add(Volley *volley)
 {
-  if(_size == 10921) return; // Max capacity reached
+  if(_size == 10000) return; // Max (display) capacity reached
   volley->setTimestamp(_timeOffset);
   write(_size, volley);
   _size++;
