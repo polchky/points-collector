@@ -1,9 +1,11 @@
 #include <bluefruit.h>
-#include "Volley.h"
-#include "VolleyManager.h"
+
+#include "Adafruit_FRAM_I2C.h"
+#include "BleManager.h"
 #include "DisplayManager.h"
 #include "InputManager.h"
-#include "Adafruit_FRAM_I2C.h"
+#include "Volley.h"
+#include "VolleyManager.h"
 
 #define THUMB   2
 #define INDEX   16
