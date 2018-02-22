@@ -28,6 +28,7 @@ class DisplayManager {
     void displayVolley(Volley *volley, boolean update);
     void setBrightness(uint8_t brightness);
     void displayBrightness(uint8_t brightness, boolean update);
+    void displayVoltage(uint8_t voltage, boolean update);
   private: 
     Adafruit_7segment _ledDisplay;
 };
@@ -121,6 +122,22 @@ void DisplayManager::displayBrightness(uint8_t brightness, boolean update)
     _ledDisplay.writeDigitNum(1, 1);
     _ledDisplay.writeDigitNum(3, brightness - 10);
   }
+  if(update) _ledDisplay.writeDisplay();
+}
+
+void DisplayManager::displayVoltage(uint8_t voltage, boolean update)
+{
+  _ledDisplay.clear();
+  // First digit and decimal point
+  _ledDisplay.writeDigitNum(1, voltage / 100, true);
+  // Second digit
+  if(voltage >= 10){
+    _ledDisplay.writeDigitNum(3, voltage / 10 % 10);
+  }else{
+    _ledDisplay.writeDigitNum(3, 0);
+  }
+  // Third digit
+  _ledDisplay.writeDigitNum(4, voltage % 10);
   if(update) _ledDisplay.writeDisplay();
 }
 

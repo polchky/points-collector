@@ -5,7 +5,7 @@
 #include "Volley.h"
 #include "Adafruit_FRAM_I2C.h"
 
-#define SIZE_FRAM_INDEX 32765
+#define SIZE_FRAM_INDEX 32766
 
 
 class VolleyManager

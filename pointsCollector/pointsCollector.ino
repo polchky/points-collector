@@ -12,15 +12,16 @@
 #define MIDDLE  4
 #define RING    5
 
-#define STATE_SENDING   0
-#define STATE_IDLE      1
-#define STATE_SETTINGS  2
-#define STATE_RECORDING 3
-#define STATE_HISTORY   4
-#define STATE_REMOVING  5
+#define STATE_SENDING     0
+#define STATE_IDLE        1
+#define STATE_BRIGHTNESS  2
+#define STATE_RECORDING   3
+#define STATE_HISTORY     4
+#define STATE_REMOVING    5
+#define STATE_VOLTAGE     6
 
-#define BRIGHTNESS_FRAM_INDEX   32767
-#define DISPLAY_SHORT_MS     500
+#define BRIGHTNESS_FRAM_INDEX   32765
+#define DISPLAY_SHORT_MS        500
 
 DisplayManager displayManager = DisplayManager();
 VolleyManager volleyManager = VolleyManager();
@@ -42,14 +43,17 @@ void setup()
   inputManager.begin(THUMB, INDEX, MIDDLE, RING);
   volley = Volley(); 
   fram.begin(MB85RC_DEFAULT_ADDRESS);
-  
   brightness = readBrightness();
   displayManager.begin(0x70);
   displayManager.setBrightness(brightness);
 
-  enterIdle();
+  // Battery reading settings
+  analogReference(AR_INTERNAL_3_0);
+  analogReadResolution(12);
+  delay(1);
+  readVoltage();
 
-  
+  enterIdle();  
 }
  
 void loop()
@@ -64,8 +68,8 @@ void loop()
     doSending();
     break;
 
-    case STATE_SETTINGS:
-    doSettings();
+    case STATE_BRIGHTNESS:
+    doBrightness();
     break;
 
     case STATE_RECORDING:
@@ -80,6 +84,10 @@ void loop()
     doRemoving();
     break;
 
+    case STATE_VOLTAGE:
+    doVoltage();
+    break;
+    
     default:
     break;
   }
@@ -96,11 +104,11 @@ void doIdle(){
   if(inputManager.clicked(THUMB)){
     enterRecording();
   }else if(inputManager.longClicked(THUMB)){
-    state = STATE_SENDING;
+    enterSending();
   }else if(inputManager.longClicked(INDEX)){
     enterHistory();
   }else if(inputManager.longClicked(MIDDLE)){
-    enterSettings();    
+    enterBrightness();    
   }else if(inputManager.longClicked(RING)){
     enterRemoving();
   }else{
@@ -132,6 +140,11 @@ void doRecording()
     }
     displayManager.displayVolley(&volley, true);
   }
+}
+
+void enterSending()
+{
+  state = STATE_SENDING;
 }
 
 void doSending()
@@ -211,13 +224,13 @@ void doRemoving()
   }
 }
 
-void enterSettings()
+void enterBrightness()
 {
-  state = STATE_SETTINGS;
+  state = STATE_BRIGHTNESS;
   displayManager.displayBrightness(brightness, true);
 }
 
-void doSettings()
+void doBrightness()
 {
   if(inputManager.clicked(THUMB)){
     writeBrightness(brightness);
@@ -227,6 +240,10 @@ void doSettings()
     brightness = readBrightness();
     displayManager.setBrightness(brightness);
     enterIdle();
+  }else if(inputManager.clicked(MIDDLE)){
+    brightness = readBrightness();
+    displayManager.setBrightness(brightness);
+    enterVoltage();
   }else if(inputManager.clicked(INDEX)){
     if(brightness < 15){
       brightness++;
@@ -242,6 +259,21 @@ void doSettings()
   }
 }
 
+void enterVoltage()
+{
+  state = STATE_VOLTAGE;
+  displayManager.displayVoltage(readVoltage(), true);
+}
+
+void doVoltage()
+{
+  if(inputManager.clicked(MIDDLE)){
+    enterBrightness();
+  }else if(inputManager.longClicked(MIDDLE)){
+    enterIdle();
+  }
+}
+
 uint8_t readBrightness()
 {
   return fram.read8(BRIGHTNESS_FRAM_INDEX);
@@ -251,6 +283,27 @@ void writeBrightness(uint8_t brightness)
 {
   fram.write8(BRIGHTNESS_FRAM_INDEX, brightness);
 }
+
+uint8_t readVoltage()
+{
+  uint8_t batteryLevel;
+  float mvolts = analogRead(A7) * 0.73242188F;
+  if (mvolts >= 3000){
+    batteryLevel = 100;
+  }else if(mvolts > 2900){
+    batteryLevel = 100 - ((3000 - mvolts) * 58) / 100;
+  }else if(mvolts > 2740){
+    batteryLevel = 42 - ((2900 - mvolts) * 24) / 160;
+  }else if(mvolts > 2440){
+    batteryLevel = 18 - ((2740 - mvolts) * 12) / 300;
+  }else if(mvolts > 2100){
+    batteryLevel = 6 - ((2440 - mvolts) * 6) / 340;
+  }else{
+      batteryLevel = 0;
+  }
+  return batteryLevel;
+}
+
 
 
 
