@@ -196,6 +196,7 @@ void doHistory()
   }
   if(misc + DISPLAY_SHORT_MS <= millis() && !volleyDisplayed){
     displayManager.displayVolley(&volley, true);
+    volleyDisplayed = true;
   }
 }
 
