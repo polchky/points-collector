@@ -31,6 +31,7 @@ class DisplayManager {
     void displayVoltage(uint8_t voltage, boolean update);
   private: 
     Adafruit_7segment _ledDisplay;
+    unsigned long misc;
 };
 
 DisplayManager::DisplayManager(){}
@@ -49,15 +50,22 @@ void DisplayManager::resetDisplay(boolean update)
 
 void DisplayManager::displayIdle(unsigned long idleStart)
 {
-  uint8_t cycle = (uint8_t) ((millis() - idleStart) / DEFAULT_DISPLAY_MS) % 4;
-  for(uint8_t i=0; i<4; i++){
-    if(i == cycle){
-      _ledDisplay.writeDigitRaw(DIGITS[i], BYTES_DOT);
-    }else{
-      _ledDisplay.writeDigitRaw(DIGITS[i], 0);
-    }
+  unsigned long cycle = (millis() - idleStart) / DEFAULT_DISPLAY_MS;
+  if(cycle == 0){
+    misc = 3;
   }
-  _ledDisplay.writeDisplay();
+  cycle = cycle % 4;
+  if(misc != cycle){
+    for(uint8_t i=0; i<4; i++){
+      if(i == cycle){
+        _ledDisplay.writeDigitRaw(DIGITS[i], BYTES_DOT);
+      }else{
+        _ledDisplay.writeDigitRaw(DIGITS[i], 0);
+      }
+    }
+    _ledDisplay.writeDisplay();
+    misc = cycle;
+  }
 }
 
 void DisplayManager::println(uint16_t number)

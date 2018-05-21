@@ -9,13 +9,14 @@
 #include "StateFunctions.h"
 #include <FiniteStateMachine.h>
 
-#define THUMB   2
-#define INDEX   16
-#define MIDDLE  4
-#define RING    5
+#define THUMB   5
+#define INDEX   2
+#define MIDDLE  3
+#define RING    4
 
 #define BRIGHTNESS_FRAM_INDEX   32765
 #define DISPLAY_SHORT_MS        500
+#define IDLE_DISPLAY_MS         500
 
 uint8_t brightnessValue;
 unsigned long idleStart;
@@ -46,6 +47,7 @@ FSM stateMachine = FSM(idle);
 
 void setup()
 {
+  Serial.begin(115200);
   volleyManager.begin();
   inputManager.begin(THUMB, INDEX, MIDDLE, RING);
   volley = Volley(); 
@@ -58,8 +60,6 @@ void setup()
   analogReference(AR_INTERNAL_3_0);
   analogReadResolution(12);
   delay(1);
-  readVoltage();
-
   
 }
  
@@ -90,6 +90,8 @@ void doIdle(){
   // Date
   }else if(inputManager.longClicked(MIDDLE)){
     stateMachine.transitionTo(date);
+  }else{
+    displayManager.displayIdle(idleStart);
   }
 }
 
